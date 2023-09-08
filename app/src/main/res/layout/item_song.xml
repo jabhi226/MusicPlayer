@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/black">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/iv_song_img"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_margin="12dp"
+        tools:src="@mipmap/ic_launcher_round"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/RoundedImageView" />
+
+    <TextView
+        android:id="@+id/tv_song_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:textAppearance="@style/TextBold"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/tv_artist"
+        app:layout_constraintStart_toEndOf="@id/iv_song_img"
+        app:layout_constraintTop_toTopOf="@id/iv_song_img"
+        tools:text="Starboy" />
+
+    <TextView
+        android:id="@+id/tv_artist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextRegular"
+        app:layout_constraintBottom_toBottomOf="@id/iv_song_img"
+        app:layout_constraintStart_toStartOf="@id/tv_song_name"
+        app:layout_constraintTop_toBottomOf="@id/tv_song_name"
+        tools:text="The Weeknd" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
