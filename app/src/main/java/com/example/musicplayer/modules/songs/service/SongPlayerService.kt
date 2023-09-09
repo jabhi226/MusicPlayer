@@ -28,14 +28,8 @@ class SongPlayerService : Service() {
         if (currentSongDataPoint == song.url) return
         currentSongDataPoint = song.url
         try {
-            if (isSongPlaying() == true){
-                mediaPlayer?.reset()
-            }
-            try {
-                mediaPlayer?.setDataSource(song.url)
-            } catch (e1: IOException) {
-                e1.printStackTrace()
-            }
+            mediaPlayer?.reset()
+            mediaPlayer?.setDataSource(song.url)
             mediaPlayer?.setOnPreparedListener {
                 it.start()
             }
