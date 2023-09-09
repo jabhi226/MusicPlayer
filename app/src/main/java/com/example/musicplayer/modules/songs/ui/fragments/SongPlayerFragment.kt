@@ -1,5 +1,6 @@
 package com.example.musicplayer.modules.songs.ui.fragments
 
+import android.annotation.SuppressLint
 import android.graphics.LinearGradient
 import android.graphics.Shader
 import android.graphics.drawable.ShapeDrawable
@@ -31,9 +32,12 @@ import com.example.musicplayer.modules.songs.ui.fragments.ForYouFragment.Compani
 import com.example.musicplayer.modules.songs.viewModels.ForYouViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.DecimalFormat
+import java.text.NumberFormat
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -120,7 +124,8 @@ class SongPlayerFragment : Fragment() {
                     progress: Int,
                     fromUser: Boolean
                 ) {
-                    songService?.seekTo(progress.seconds.toInt(DurationUnit.MILLISECONDS))
+                    if (fromUser)
+                        songService?.seekTo(progress.seconds.toInt(DurationUnit.MILLISECONDS))
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -133,6 +138,7 @@ class SongPlayerFragment : Fragment() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun observeData() {
         viewModel.songList.observe(viewLifecycleOwner) { songList ->
             when (songList.status) {
@@ -163,7 +169,7 @@ class SongPlayerFragment : Fragment() {
                         )
                     )
 
-                    CoroutineScope(Dispatchers.Main).launch {
+                    lifecycleScope.launch {
                         var duration: Int? = null
                         var currentPosition: Int? = null
                         do {
@@ -177,8 +183,9 @@ class SongPlayerFragment : Fragment() {
                             val minutes1 = TimeUnit.MILLISECONDS.toMinutes((currentPosition ?: 0).toLong())
                             val seconds1 = TimeUnit.MILLISECONDS.toSeconds((currentPosition ?: 0).toLong())
 
-                            binding.tvTimeEnd.text = "$minutes:${seconds/6}"
-                            binding.tvTimeCurrent.text = "$minutes1:${seconds1}"
+                            val f: NumberFormat = DecimalFormat("00")
+                            binding.tvTimeEnd.text = "${f.format(minutes)}:${f.format(seconds/6)}"
+                            binding.tvTimeCurrent.text = "${f.format(minutes1)}:${f.format(seconds1)}"
                             if (duration != 0){
                             val percentage = (currentPosition?.toDouble() ?: 0.0) / 1000
                             binding.seekbar.setProgress(percentage.toInt(), true)
@@ -194,7 +201,7 @@ class SongPlayerFragment : Fragment() {
     private fun setBackground(songDetails: SongDetails) {
         lifecycleScope.launch {
             val b = withContext(Dispatchers.IO) {
-                Glide.with(binding.root.context)
+                Glide.with(requireContext())
                     .asBitmap()
                     .transform(CenterCrop())
                     .centerInside()
@@ -206,7 +213,7 @@ class SongPlayerFragment : Fragment() {
             Palette.from(b).generate { palette ->
                 val swatch = palette?.darkMutedSwatch ?: palette?.darkVibrantSwatch
                 swatch?.let {
-                    val h: Int = binding.root.height
+                    val h: Int = binding.root.height ?: 0
                     val mDrawable = ShapeDrawable(RectShape())
                     mDrawable.paint.shader = LinearGradient(
                         0f,

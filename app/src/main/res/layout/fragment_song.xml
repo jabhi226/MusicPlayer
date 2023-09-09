@@ -16,7 +16,7 @@
     <View
         android:id="@+id/view_gradient"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="@dimen/_32sdp"
         android:background="@drawable/bg_tab_layout_gradient"
         android:visibility="invisible"
         app:layout_constraintBottom_toTopOf="@id/tab_layout" />
@@ -25,8 +25,7 @@
         android:id="@+id/tab_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="@dimen/_16sdp"
         app:layout_constraintBottom_toBottomOf="parent"
         android:background="@color/black"
         android:paddingTop="8dp"

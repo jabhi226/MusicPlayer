@@ -63,7 +63,8 @@ class MainActivity : AppCompatActivity() {
             }
             SongPlayerFragment::class.java.simpleName -> {
                 isShowRecyclerViewAnimation = false
-                super.onBackPressed()
+                supportFragmentManager.popBackStack()
+//                super.onBackPressed()
             }
             else -> {
                 super.onBackPressed()

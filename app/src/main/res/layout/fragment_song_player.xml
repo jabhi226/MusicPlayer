@@ -44,25 +44,10 @@
         android:textAppearance="@style/TextRegular"
         android:textColor="@color/white"
         android:textSize="16sp"
-        app:layout_constraintBottom_toTopOf="@id/progress_time"
+        app:layout_constraintBottom_toTopOf="@id/seekbar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         tools:text="Coldplay" />
-
-    <ProgressBar
-        android:id="@+id/progress_time"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:progressBackgroundTint="@color/white"
-        android:progressTint="@color/white"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/tv_time_current"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:progress="30" />
 
     <SeekBar
         android:id="@+id/seekbar"
@@ -71,19 +56,23 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        app:layout_constraintBottom_toTopOf="@+id/tv_time_current"
+        android:layout_marginBottom="40dp"
+        android:progressBackgroundTint="@color/text_grey"
+        android:progressTint="@color/white"
+        android:thumbTint="@color/white"
+        app:layout_constraintBottom_toTopOf="@+id/iv_pause_start"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        tools:progress="30" />
 
     <TextView
         android:id="@+id/tv_time_current"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="40dp"
         android:textAppearance="@style/TextRegular"
         android:textColor="@color/white"
-        app:layout_constraintBottom_toTopOf="@id/iv_previous"
         app:layout_constraintStart_toStartOf="@+id/seekbar"
+        app:layout_constraintTop_toBottomOf="@id/seekbar"
         tools:text="01:00" />
 
     <TextView
@@ -113,7 +102,7 @@
         android:id="@+id/iv_pause_start"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="80dp"
+        android:layout_marginBottom="@dimen/_56sdp"
         android:foreground="@drawable/ripple_round_corners"
         android:src="@drawable/ic_pause"
         app:layout_constraintBottom_toBottomOf="parent"

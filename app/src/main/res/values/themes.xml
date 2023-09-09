@@ -8,13 +8,13 @@
     <style name="Theme.MusicPlayer" parent="Base.Theme.MusicPlayer" />
 
     <style name="TextBold">
-        <item name="android:textSize">17sp</item>
+        <item name="android:textSize">@dimen/_14ssp</item>
         <item name="android:textColor">@color/white</item>
         <item name="android:fontFamily">@font/sf_pro_text_semibold</item>
     </style>
 
     <style name="TextRegular">
-        <item name="android:textSize">15sp</item>
+        <item name="android:textSize">@dimen/_12ssp</item>
         <item name="android:textColor">@color/text_grey</item>
         <item name="android:fontFamily">@font/sf_pro_text_regular</item>
     </style>
@@ -22,6 +22,11 @@
     <style name="RoundedImageView">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="RoundedImageViewCarousal">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/_16sdp</item>
     </style>
 
 </resources>
