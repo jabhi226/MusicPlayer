@@ -36,9 +36,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.Exception
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -124,8 +126,10 @@ class SongPlayerFragment : Fragment() {
                     progress: Int,
                     fromUser: Boolean
                 ) {
-                    if (fromUser)
-                        songService?.seekTo(progress.seconds.toInt(DurationUnit.MILLISECONDS))
+                    if (fromUser){
+                        val duration = songService?.getDurations()
+                        songService?.seekTo((duration ?: 0) * progress / 100)
+                    }
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -184,11 +188,11 @@ class SongPlayerFragment : Fragment() {
                             val seconds1 = TimeUnit.MILLISECONDS.toSeconds((currentPosition ?: 0).toLong())
 
                             val f: NumberFormat = DecimalFormat("00")
-                            binding.tvTimeEnd.text = "${f.format(minutes)}:${f.format(seconds/6)}"
-                            binding.tvTimeCurrent.text = "${f.format(minutes1)}:${f.format(seconds1)}"
+                            binding.tvTimeEnd.text = "${f.format(minutes)}:${f.format(seconds%60)}"
+                            binding.tvTimeCurrent.text = "${f.format(minutes1)}:${f.format(seconds1%60)}"
                             if (duration != 0){
-                            val percentage = (currentPosition?.toDouble() ?: 0.0) / 1000
-                            binding.seekbar.setProgress(percentage.toInt(), true)
+                                val p = 100 - (abs(((currentPosition?.toDouble() ?: 0.0) - (duration?.toDouble() ?: 0.0)) / (duration?.toDouble() ?: 0.0)) * 100)
+                                binding.seekbar.setProgress(p.toInt(), true)
                             }
                         } while ((duration ?: 0) >= (currentPosition ?: 0))
                     }
