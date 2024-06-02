@@ -1,7 +1,5 @@
 package com.example.musicplayer.modules.songs.data.models.network
 
-import android.graphics.Bitmap
-import com.example.musicplayer.modules.songs.data.models.ui.Song
 import com.google.gson.annotations.SerializedName
 
 data class SongDetails(

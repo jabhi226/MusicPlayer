@@ -1,33 +1,29 @@
 package com.example.musicplayer.modules.songs.ui.fragments
 
+import android.Manifest
+import android.app.Activity
+import android.content.ContentUris
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.app.ActivityCompat
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.musicplayer.R
+import com.example.musicplayer.modules.core.utils.Utils
+import com.example.musicplayer.modules.songs.data.models.ui.LocalSong
+import com.example.musicplayer.modules.songs.ui.adapter.TopTrackAdapter
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [TopTracksFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class TopTracksFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
+    val adapter = TopTrackAdapter {
+
     }
 
     override fun onCreateView(
@@ -38,23 +34,104 @@ class TopTracksFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_top_tracks, container, false)
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        ActivityCompat.requestPermissions(
+            requireActivity(),
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ),
+            101
+        )
+        view.findViewById<RecyclerView>(R.id.rv_songs).apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = this@TopTracksFragment.adapter
+        }
+        adapter.submitList(getPlayList())
+    }
+
+    private fun getPlayList(): List<LocalSong>? {
+        return try {
+            val songs = ArrayList<LocalSong>()
+            val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+            val projection = arrayOf(
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.ALBUM_ID,
+                MediaStore.Audio.AudioColumns.ALBUM_ID,
+                MediaStore.Audio.AudioColumns.DATA,
+                MediaStore.Audio.AudioColumns.DISPLAY_NAME,
+                MediaStore.Audio.AudioColumns.ALBUM,
+                MediaStore.Audio.ArtistColumns.ARTIST,
+                MediaStore.Audio.AudioColumns.RELATIVE_PATH,
+                MediaStore.Audio.AudioColumns.AUTHOR,
+                MediaStore.Audio.AudioColumns.DURATION,
+            )
+            val selection = MediaStore.Audio.Media.IS_MUSIC
+
+            val c = requireContext().contentResolver.query(
+                uri,
+                projection,
+                null,
+                null,
+                null
+            )
+
+            if (c != null) {
+                while (c.moveToNext()) {
+                    for (i in 0 until c.columnCount) {
+                        print("${c.getString(i)}, ")
+                    }
+                    val id = c.getString(0)
+                    val data = c.getString(1)
+                    val displayName = c.getString(2)
+                    val artist = c.getString(3)
+                    val album = c.getString(4)
+                    val duration = c.getString(5)
+                    val albumId = c.getLong(6)
+
+
+                    val imageUri = ContentUris.withAppendedId(
+                        Uri.parse("content://media/external/audio/albumart"),
+                        albumId
+                    )
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//                        val adsflsf = requireContext().contentResolver.loadThumbnail(imageUri, Size(300, 300), null)
+//                        adsflsf
+                    }
+
+                    val song = LocalSong(
+                        id,
+                        data,
+                        displayName,
+                        artist,
+                        album,
+                        duration,
+                        imageUri.toString()
+                    )
+                    println("=>>> $song")
+                    songs.add(song)
+                }
+                c.close()
+            }
+            Utils.showToast(requireContext(), songs.size.toString())
+            songs
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment TopTracksFragment.
-         */
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance() =
             TopTracksFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
             }
     }
 }
