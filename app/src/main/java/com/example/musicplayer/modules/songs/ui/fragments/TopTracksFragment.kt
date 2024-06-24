@@ -1,7 +1,6 @@
 package com.example.musicplayer.modules.songs.ui.fragments
 
 import android.Manifest
-import android.app.Activity
 import android.content.ContentUris
 import android.net.Uri
 import android.os.Build
@@ -12,17 +11,22 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.musicplayer.R
-import com.example.musicplayer.modules.core.utils.Utils
 import com.example.musicplayer.modules.songs.data.models.ui.LocalSong
 import com.example.musicplayer.modules.songs.ui.adapter.TopTrackAdapter
+import com.example.musicplayer.modules.songs.viewModels.TopTrackViewModel
 
 
 class TopTracksFragment : Fragment() {
 
+    private val viewModel by activityViewModels<TopTrackViewModel>()
     val adapter = TopTrackAdapter {
+        it?.let {
+            viewModel.setCurrentSong(it)
+        }
 
     }
 
@@ -48,7 +52,15 @@ class TopTracksFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = this@TopTracksFragment.adapter
         }
-        adapter.submitList(getPlayList())
+        getPlayList()?.let {
+            viewModel.setSongList(it)
+            adapter.submitList(it)
+        }
+        viewModel.currentSong.observe(viewLifecycleOwner) {currentSong ->
+            viewModel.songList.value?.let {
+                ForYouFragment.songService?.startSong(it[currentSong].getSongDetailsModel())
+            }
+        }
     }
 
     private fun getPlayList(): List<LocalSong>? {
@@ -100,7 +112,8 @@ class TopTracksFragment : Fragment() {
                         Uri.parse("content://media/external/audio/albumart"),
                         albumId
                     )
-
+                    val songUri = ContentUris.withAppendedId(uri, id.toLong())
+                    println("=========>>> $songUri")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 //                        val adsflsf = requireContext().contentResolver.loadThumbnail(imageUri, Size(300, 300), null)
 //                        adsflsf
@@ -113,14 +126,13 @@ class TopTracksFragment : Fragment() {
                         artist,
                         album,
                         duration,
-                        imageUri.toString()
+                        imageUri.toString(),
+                        songUri
                     )
-                    println("=>>> $song")
                     songs.add(song)
                 }
                 c.close()
             }
-            Utils.showToast(requireContext(), songs.size.toString())
             songs
         } catch (e: Exception) {
             e.printStackTrace()

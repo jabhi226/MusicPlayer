@@ -1,16 +1,18 @@
 package com.example.musicplayer.modules.songs.service
 
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
+import android.support.v4.media.session.MediaSessionCompat
+import com.example.musicplayer.R
+import com.example.musicplayer.application.MyApp
 import com.example.musicplayer.modules.songs.data.models.network.SongDetails
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.io.IOException
-import java.lang.Exception
+import com.example.musicplayer.modules.songs.receiver.SongPlayerNotificationReceiver
 
 
 class SongPlayerService : Service() {
@@ -18,6 +20,13 @@ class SongPlayerService : Service() {
     private var mediaPlayer: MediaPlayer? = null
     private val binder = SongPlayerBinder()
     private var currentSongDataPoint: String? = null
+    private var songEventListener: SongEventListener? = null
+
+    companion object {
+        const val PLAY = "PLAY"
+        const val NEXT = "NEXT"
+        const val PREVIOUS = "PREVIOUS"
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -25,19 +34,28 @@ class SongPlayerService : Service() {
     }
 
     fun startSong(song: SongDetails) {
-        if (currentSongDataPoint == song.url) return
-        currentSongDataPoint = song.url
+        if (currentSongDataPoint == (song.url ?: song.uri.toString())) return
+        currentSongDataPoint = song.url ?: song.uri.toString()
         try {
             mediaPlayer?.reset()
-            mediaPlayer?.setDataSource(song.url)
+            if (song.url != null) {
+                mediaPlayer?.setDataSource(song.url)
+            } else {
+                song.uri?.let { mediaPlayer?.setDataSource(this, it) }
+            }
             mediaPlayer?.setOnPreparedListener {
                 it.start()
             }
             mediaPlayer?.prepareAsync()
+            showNotification(song)
         } catch (e: Exception) {
             e.printStackTrace()
 
         }
+    }
+
+    fun setEventListeners(songEventListener: SongEventListener){
+        this.songEventListener = songEventListener
     }
 
     fun pauseSong() {
@@ -61,8 +79,63 @@ class SongPlayerService : Service() {
     }
 
     fun seekTo(seekTimeInMilliseconds: Int) {
-        println("poiuy $seekTimeInMilliseconds")
         mediaPlayer?.seekTo(seekTimeInMilliseconds)
+    }
+
+    private fun showNotification(
+        song: SongDetails
+    ) {
+        val mediaSession = MediaSessionCompat(this, "music_player")
+
+        val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+        val prevIntent =
+            Intent(baseContext, SongPlayerNotificationReceiver::class.java).setAction(PREVIOUS)
+        val prevPendingIntent = PendingIntent.getBroadcast(baseContext, 0, prevIntent, flag)
+
+        val playIntent =
+            Intent(baseContext, SongPlayerNotificationReceiver::class.java).setAction(PLAY)
+        val playPendingIntent = PendingIntent.getBroadcast(baseContext, 0, playIntent, flag)
+
+        val nextIntent =
+            Intent(baseContext, SongPlayerNotificationReceiver::class.java).setAction(NEXT)
+        val nextPendingIntent = PendingIntent.getBroadcast(baseContext, 0, nextIntent, flag)
+
+        val notification = androidx.core.app.NotificationCompat.Builder(
+            this,
+            MyApp.MUSIC_PLAYER_NOTIFICATION_CHANNEL
+        )
+            // Show controls on lock screen even when user hides sensitive content.
+            .setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setLargeIcon(
+                BitmapFactory.decodeResource(
+                    this.resources,
+                    R.drawable.ic_launcher_foreground
+                )
+            )
+            // Add media control buttons that invoke intents in your media service
+            .addAction(android.R.drawable.ic_media_previous, "Previous", prevPendingIntent) // #0
+            .addAction(android.R.drawable.ic_media_pause, "Pause", playPendingIntent) // #1
+            .addAction(android.R.drawable.ic_media_next, "Next", nextPendingIntent) // #2
+//            .setContentIntent(contentIntent)
+            .setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setShowActionsInCompactView(0, 1, 2)
+                    .setMediaSession(mediaSession.sessionToken)
+            )
+            .setContentTitle(song.name)
+            .setContentText(song.artist)
+            .setOnlyAlertOnce(true) // show notification only once
+            .setOngoing(true) // set notification ongoing to make it non cancelable
+            .setAutoCancel(false)
+            .build()
+
+        startForeground(1001, notification)
+
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -71,6 +144,14 @@ class SongPlayerService : Service() {
 
     fun isSongPlaying(): Boolean? {
         return mediaPlayer?.isPlaying
+    }
+
+    fun nextSong() {
+        songEventListener?.playNextSong()
+    }
+
+    fun previousSong() {
+        songEventListener?.playPreviousSong()
     }
 
     inner class SongPlayerBinder : Binder() {

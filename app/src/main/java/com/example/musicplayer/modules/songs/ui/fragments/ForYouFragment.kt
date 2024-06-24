@@ -23,6 +23,7 @@ import com.example.musicplayer.databinding.FragmentForYouBinding
 import com.example.musicplayer.modules.core.utils.Resource
 import com.example.musicplayer.modules.core.utils.setRecyclerAnimation
 import com.example.musicplayer.modules.songs.data.models.network.SongDetails
+import com.example.musicplayer.modules.songs.service.SongEventListener
 import com.example.musicplayer.modules.songs.service.SongPlayerService
 import com.example.musicplayer.modules.songs.ui.activity.MainActivity
 import com.example.musicplayer.modules.songs.ui.adapter.SongListAdapter
@@ -34,7 +35,7 @@ import kotlinx.coroutines.launch
 
 
 @AndroidEntryPoint
-class ForYouFragment : Fragment(), ServiceConnection {
+class ForYouFragment : Fragment(), ServiceConnection, SongEventListener {
 
     private var _binding: FragmentForYouBinding? = null
     private val binding get() = _binding!!
@@ -166,14 +167,40 @@ class ForYouFragment : Fragment(), ServiceConnection {
             ForYouFragment()
 
         var songService: SongPlayerService? = null
+
+        fun startStopPlayer() {
+            if (songService?.isSongPlaying() == true) {
+                songService?.pauseSong()
+            } else {
+                songService?.resumeSong()
+            }
+        }
+
+        fun playPrevious() {
+            songService?.previousSong()
+        }
+
+        fun playNext() {
+            songService?.nextSong()
+        }
+
     }
 
     override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
         val binder = service as SongPlayerService.SongPlayerBinder
         songService = binder.getSongPlayerService()
+        songService?.setEventListeners(this)
     }
 
     override fun onServiceDisconnected(name: ComponentName?) {
         songService = null
+    }
+
+    override fun playPreviousSong() {
+        viewModel.changesSongNumber(-1)
+    }
+
+    override fun playNextSong() {
+        viewModel.changesSongNumber(1)
     }
 }

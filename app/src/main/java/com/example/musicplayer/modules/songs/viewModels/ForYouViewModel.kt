@@ -1,5 +1,6 @@
 package com.example.musicplayer.modules.songs.viewModels
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,8 +20,11 @@ class ForYouViewModel @Inject constructor(
     private val exceptionHandler: CoroutineExceptionHandler
 ) : ViewModel() {
 
-    val songList = MutableLiveData<Resource<List<SongDetails>>>()
-    val currentSong: MutableLiveData<Int> = MutableLiveData()
+    private val _songList = MutableLiveData<Resource<List<SongDetails>>>()
+    val songList: LiveData<Resource<List<SongDetails>>> get() = _songList
+
+    private val _currentSong: MutableLiveData<Int> = MutableLiveData()
+    val currentSong: LiveData<Int> get() = _currentSong
 
     init {
         getSongList()
@@ -29,25 +33,25 @@ class ForYouViewModel @Inject constructor(
     private fun getSongList() {
         viewModelScope.launch {
             CoroutineScope(Dispatchers.IO).launch(exceptionHandler) {
-                songList.postValue(repository.getSongList())
+                _songList.postValue(repository.getSongList())
             }
         }
     }
 
     fun setCurrentSong(it: SongDetails) {
-        currentSong.value = songList.value?.data?.indexOf(it)
+        _currentSong.value = songList.value?.data?.indexOf(it)
     }
 
     fun changesSongNumber(i: Int) {
         val c = currentSong.value?.plus(i) ?: 0
         if ((songList.value?.data?.count() ?: 0) > c) {
-            currentSong.value = c
+            _currentSong.value = c
         }
     }
 
     fun updateSongNumber(position: Int) {
         if (position <= (songList.value?.data?.count() ?: 0)){
-            currentSong.value = position
+            _currentSong.value = position
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.musicplayer.modules.songs.data.models.network
 
+import android.net.Uri
 import com.google.gson.annotations.SerializedName
 
 data class SongDetails(
@@ -17,4 +18,5 @@ data class SongDetails(
     @SerializedName("top_track") var topTrack: Boolean? = null,
     @SerializedName("url") var url: String? = null
 ) {
+    var uri: Uri? = null
 }

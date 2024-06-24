@@ -25,25 +25,18 @@ import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.example.musicplayer.R
 import com.example.musicplayer.databinding.FragmentSongPlayerBinding
 import com.example.musicplayer.modules.core.utils.Resource
-import com.example.musicplayer.modules.core.utils.Utils
 import com.example.musicplayer.modules.songs.data.models.network.SongDetails
 import com.example.musicplayer.modules.songs.ui.adapter.ViewPagerAdapter
 import com.example.musicplayer.modules.songs.ui.fragments.ForYouFragment.Companion.songService
 import com.example.musicplayer.modules.songs.viewModels.ForYouViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.lang.Exception
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
 
 
 class SongPlayerFragment : Fragment() {
@@ -161,7 +154,7 @@ class SongPlayerFragment : Fragment() {
                     val song = it[currentSong]
                     tvSongName.text = song.name
                     tvArtist.text = song.artist
-                    viewPagerCarousel.setCurrentItem(currentSong, true)
+                    viewPagerCarousel.setCurrentItem(currentSong, false)
 
                     setBackground(song)
                     songService?.startSong(it[currentSong])
@@ -177,7 +170,6 @@ class SongPlayerFragment : Fragment() {
                         var duration: Int? = null
                         var currentPosition: Int? = null
                         do {
-                            delay(500)
                             duration = songService?.getDurations()
                             currentPosition = songService?.getCurrentPosition()
 
@@ -194,6 +186,7 @@ class SongPlayerFragment : Fragment() {
                                 val p = 100 - (abs(((currentPosition?.toDouble() ?: 0.0) - (duration?.toDouble() ?: 0.0)) / (duration?.toDouble() ?: 0.0)) * 100)
                                 binding.seekbar.setProgress(p.toInt(), true)
                             }
+                            delay(500)
                         } while ((duration ?: 0) >= (currentPosition ?: 0))
                     }
                 }

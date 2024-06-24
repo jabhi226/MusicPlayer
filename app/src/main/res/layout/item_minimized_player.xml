@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@color/white">
+    android:layout_height="wrap_content">
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/iv_song_img"
@@ -39,7 +38,7 @@
         android:foreground="@drawable/ripple_round_corners"
         android:scaleX="0.5"
         android:scaleY="0.5"
-        android:src="@drawable/ic_pause"
+        android:src="@drawable/ic_resume"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
