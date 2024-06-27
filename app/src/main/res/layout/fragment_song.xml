@@ -21,6 +21,14 @@
         android:visibility="invisible"
         app:layout_constraintBottom_toTopOf="@id/tab_layout" />
 
+    <include
+        android:id="@+id/item_minimized_player"
+        layout="@layout/item_minimized_player"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/tab_layout" />
+
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_layout"
         android:layout_width="match_parent"

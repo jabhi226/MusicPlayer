@@ -9,42 +9,41 @@ import android.os.IBinder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
-import androidx.palette.graphics.Palette
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.bitmap.CenterInside
-import com.example.musicplayer.R
 import com.example.musicplayer.databinding.FragmentForYouBinding
 import com.example.musicplayer.modules.core.utils.Resource
 import com.example.musicplayer.modules.core.utils.setRecyclerAnimation
-import com.example.musicplayer.modules.songs.data.models.network.SongDetails
+import com.example.musicplayer.modules.songs.helper.SongType
 import com.example.musicplayer.modules.songs.service.SongEventListener
 import com.example.musicplayer.modules.songs.service.SongPlayerService
 import com.example.musicplayer.modules.songs.ui.activity.MainActivity
 import com.example.musicplayer.modules.songs.ui.adapter.SongListAdapter
 import com.example.musicplayer.modules.songs.viewModels.ForYouViewModel
+import com.example.musicplayer.modules.songs.viewModels.SongsViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 
 
 @AndroidEntryPoint
-class ForYouFragment : Fragment(), ServiceConnection, SongEventListener {
+class ForYouFragment : Fragment() {
 
     private var _binding: FragmentForYouBinding? = null
     private val binding get() = _binding!!
-    private val viewModel by activityViewModels<ForYouViewModel>()
+
+    //    private val viewModel by activityViewModels<ForYouViewModel>()
+    private val newViewModel by activityViewModels<SongsViewModel>()
 
 
     private val adapter = SongListAdapter {
         it?.let {
-            viewModel.setCurrentSong(it)
+//            viewModel.setCurrentSong(it)
+            newViewModel.setCurrentSong(
+                Pair(
+                    SongType.REMOTE_SONG,
+                    newViewModel.remoteSongList.value?.data?.indexOf(it)
+                )
+            )
         }
     }
 
@@ -66,15 +65,26 @@ class ForYouFragment : Fragment(), ServiceConnection, SongEventListener {
         super.onViewCreated(view, savedInstanceState)
         initRecyclerView()
         observeData()
-        startSongService()
-    }
-
-    private fun startSongService() {
-        val i = Intent(requireContext(), SongPlayerService::class.java)
-        requireContext().bindService(i, this, BIND_AUTO_CREATE)
     }
 
     private fun observeData() {
+        newViewModel.remoteSongList.observe(viewLifecycleOwner) {
+            when (it.status) {
+                Resource.Status.SUCCESS -> {
+                    adapter.submitList(it.data)
+                    binding.rvSongs.setRecyclerAnimation((requireActivity() as MainActivity).isShowRecyclerViewAnimation)
+                }
+
+                Resource.Status.ERROR -> {
+                    //show toast
+                }
+
+                else -> {
+
+                }
+            }
+        }
+        /*
         viewModel.songList.observe(viewLifecycleOwner) {
             when (it.status) {
                 Resource.Status.SUCCESS -> {
@@ -97,8 +107,10 @@ class ForYouFragment : Fragment(), ServiceConnection, SongEventListener {
                 songService?.startSong(it[currentSong])
             }
         }
+         */
     }
 
+    /*
     private fun showMinimizedPlayer(songDetails: SongDetails) {
         binding.apply {
             itemMinimizedPlayer.root.setOnClickListener {
@@ -153,6 +165,7 @@ class ForYouFragment : Fragment(), ServiceConnection, SongEventListener {
             }
         }
     }
+     */
 
     private fun initRecyclerView() {
         binding.rvSongs.apply {
@@ -166,41 +179,5 @@ class ForYouFragment : Fragment(), ServiceConnection, SongEventListener {
         fun newInstance() =
             ForYouFragment()
 
-        var songService: SongPlayerService? = null
-
-        fun startStopPlayer() {
-            if (songService?.isSongPlaying() == true) {
-                songService?.pauseSong()
-            } else {
-                songService?.resumeSong()
-            }
-        }
-
-        fun playPrevious() {
-            songService?.previousSong()
-        }
-
-        fun playNext() {
-            songService?.nextSong()
-        }
-
-    }
-
-    override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-        val binder = service as SongPlayerService.SongPlayerBinder
-        songService = binder.getSongPlayerService()
-        songService?.setEventListeners(this)
-    }
-
-    override fun onServiceDisconnected(name: ComponentName?) {
-        songService = null
-    }
-
-    override fun playPreviousSong() {
-        viewModel.changesSongNumber(-1)
-    }
-
-    override fun playNextSong() {
-        viewModel.changesSongNumber(1)
     }
 }

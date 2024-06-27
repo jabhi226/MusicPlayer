@@ -27,7 +27,7 @@ import com.example.musicplayer.databinding.FragmentSongPlayerBinding
 import com.example.musicplayer.modules.core.utils.Resource
 import com.example.musicplayer.modules.songs.data.models.network.SongDetails
 import com.example.musicplayer.modules.songs.ui.adapter.ViewPagerAdapter
-import com.example.musicplayer.modules.songs.ui.fragments.ForYouFragment.Companion.songService
+import com.example.musicplayer.modules.songs.ui.fragments.SongFragment.Companion.songService
 import com.example.musicplayer.modules.songs.viewModels.ForYouViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

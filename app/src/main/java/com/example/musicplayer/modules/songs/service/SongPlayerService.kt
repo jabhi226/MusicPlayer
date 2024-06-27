@@ -12,6 +12,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import com.example.musicplayer.R
 import com.example.musicplayer.application.MyApp
 import com.example.musicplayer.modules.songs.data.models.network.SongDetails
+import com.example.musicplayer.modules.songs.helper.SongType
 import com.example.musicplayer.modules.songs.receiver.SongPlayerNotificationReceiver
 
 
@@ -47,7 +48,7 @@ class SongPlayerService : Service() {
                 it.start()
             }
             mediaPlayer?.prepareAsync()
-            showNotification(song)
+            showNotification(song, song.url != null)
         } catch (e: Exception) {
             e.printStackTrace()
 
@@ -83,7 +84,8 @@ class SongPlayerService : Service() {
     }
 
     private fun showNotification(
-        song: SongDetails
+        song: SongDetails,
+        isRemote: Boolean
     ) {
         val mediaSession = MediaSessionCompat(this, "music_player")
 
@@ -94,14 +96,17 @@ class SongPlayerService : Service() {
         }
         val prevIntent =
             Intent(baseContext, SongPlayerNotificationReceiver::class.java).setAction(PREVIOUS)
+        prevIntent.putExtra("isRemote", isRemote)
         val prevPendingIntent = PendingIntent.getBroadcast(baseContext, 0, prevIntent, flag)
 
         val playIntent =
             Intent(baseContext, SongPlayerNotificationReceiver::class.java).setAction(PLAY)
+        playIntent.putExtra("isRemote", isRemote)
         val playPendingIntent = PendingIntent.getBroadcast(baseContext, 0, playIntent, flag)
 
         val nextIntent =
             Intent(baseContext, SongPlayerNotificationReceiver::class.java).setAction(NEXT)
+        nextIntent.putExtra("isRemote", isRemote)
         val nextPendingIntent = PendingIntent.getBroadcast(baseContext, 0, nextIntent, flag)
 
         val notification = androidx.core.app.NotificationCompat.Builder(
@@ -146,12 +151,12 @@ class SongPlayerService : Service() {
         return mediaPlayer?.isPlaying
     }
 
-    fun nextSong() {
-        songEventListener?.playNextSong()
+    fun nextSong(songType: SongType) {
+        songEventListener?.playNextSong(songType)
     }
 
-    fun previousSong() {
-        songEventListener?.playPreviousSong()
+    fun previousSong(songType: SongType) {
+        songEventListener?.playPreviousSong(songType)
     }
 
     inner class SongPlayerBinder : Binder() {

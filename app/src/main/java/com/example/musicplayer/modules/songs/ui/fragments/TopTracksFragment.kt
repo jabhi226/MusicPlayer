@@ -16,16 +16,24 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.musicplayer.R
 import com.example.musicplayer.modules.songs.data.models.ui.LocalSong
+import com.example.musicplayer.modules.songs.helper.SongType
 import com.example.musicplayer.modules.songs.ui.adapter.TopTrackAdapter
+import com.example.musicplayer.modules.songs.viewModels.SongsViewModel
 import com.example.musicplayer.modules.songs.viewModels.TopTrackViewModel
 
 
 class TopTracksFragment : Fragment() {
 
-    private val viewModel by activityViewModels<TopTrackViewModel>()
+//    private val viewModel by activityViewModels<TopTrackViewModel>()
+    private val songViewModel by activityViewModels<SongsViewModel>()
     val adapter = TopTrackAdapter {
         it?.let {
-            viewModel.setCurrentSong(it)
+            songViewModel.setCurrentSong(
+                Pair(
+                    SongType.REMOTE_SONG,
+                    songViewModel.localSongList.value?.indexOf(it)
+                )
+            )
         }
 
     }
@@ -53,14 +61,15 @@ class TopTracksFragment : Fragment() {
             adapter = this@TopTracksFragment.adapter
         }
         getPlayList()?.let {
-            viewModel.setSongList(it)
+//            viewModel.setSongList(it)
+            songViewModel.setLocalSongList(it)
             adapter.submitList(it)
         }
-        viewModel.currentSong.observe(viewLifecycleOwner) {currentSong ->
-            viewModel.songList.value?.let {
-                ForYouFragment.songService?.startSong(it[currentSong].getSongDetailsModel())
-            }
-        }
+//        viewModel.currentSong.observe(viewLifecycleOwner) {currentSong ->
+//            viewModel.songList.value?.let {
+//                SongFragment.songService?.startSong(it[currentSong].getSongDetailsModel())
+//            }
+//        }
     }
 
     private fun getPlayList(): List<LocalSong>? {
