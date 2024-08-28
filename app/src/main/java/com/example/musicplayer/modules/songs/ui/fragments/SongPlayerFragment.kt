@@ -26,9 +26,11 @@ import com.example.musicplayer.R
 import com.example.musicplayer.databinding.FragmentSongPlayerBinding
 import com.example.musicplayer.modules.core.utils.Resource
 import com.example.musicplayer.modules.songs.data.models.network.SongDetails
+import com.example.musicplayer.modules.songs.data.models.ui.LocalSong
+import com.example.musicplayer.modules.songs.helper.SongType
 import com.example.musicplayer.modules.songs.ui.adapter.ViewPagerAdapter
 import com.example.musicplayer.modules.songs.ui.fragments.SongFragment.Companion.songService
-import com.example.musicplayer.modules.songs.viewModels.ForYouViewModel
+import com.example.musicplayer.modules.songs.viewModels.SongsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -44,7 +46,7 @@ class SongPlayerFragment : Fragment() {
     private var _binding: FragmentSongPlayerBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel by activityViewModels<ForYouViewModel>()
+    private val viewModel by activityViewModels<SongsViewModel>()
     private var viewPagerAdapter = ViewPagerAdapter()
 
     override fun onCreateView(
@@ -79,7 +81,7 @@ class SongPlayerFragment : Fragment() {
 
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
-                    viewModel.updateSongNumber(position)
+                    viewModel.setCurrentSong(Pair(null, position))
                 }
 
             })
@@ -89,10 +91,10 @@ class SongPlayerFragment : Fragment() {
     private fun initView() {
         binding.apply {
             ivNext.setOnClickListener {
-                viewModel.changesSongNumber(1)
+                viewModel.changesSongNumber(Pair(null, 1))
             }
             ivPrevious.setOnClickListener {
-                viewModel.changesSongNumber(-1)
+                viewModel.changesSongNumber(Pair(null, -1))
             }
             ivPauseStart.setOnClickListener {
                 if (songService?.isSongPlaying() == true) {
@@ -137,6 +139,7 @@ class SongPlayerFragment : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun observeData() {
+        /*
         viewModel.songList.observe(viewLifecycleOwner) { songList ->
             when (songList.status) {
                 Resource.Status.SUCCESS -> {
@@ -148,16 +151,38 @@ class SongPlayerFragment : Fragment() {
                 else -> {}
             }
         }
+         */
+
         viewModel.currentSong.observe(viewLifecycleOwner) { currentSong ->
             binding.apply {
-                viewModel.songList.value?.data?.let {
-                    val song = it[currentSong]
+                val l = if (currentSong.first == SongType.REMOTE_SONG) {
+                    val i = viewModel.remoteSongList.value?.data
+                    viewPagerAdapter.submitList(i)
+                    i
+                } else {
+                    val i = viewModel.localSongList.value
+                    viewPagerAdapter.submitList(i?.map { it.getSongDetailsModel() })
+                    i
+                }
+                l?.let {
+                    var song = it[currentSong.second]
+                    song = when (song) {
+                        is SongDetails -> {
+                            song
+                        }
+                        is LocalSong ->  {
+                            song.getSongDetailsModel()
+                        }
+                        else -> {
+                            return@observe
+                        }
+                    } as SongDetails
                     tvSongName.text = song.name
                     tvArtist.text = song.artist
-                    viewPagerCarousel.setCurrentItem(currentSong, false)
+                    viewPagerCarousel.setCurrentItem(currentSong.second, false)
 
                     setBackground(song)
-                    songService?.startSong(it[currentSong])
+                    songService?.startSong(song)
 
                     ivPauseStart.setImageDrawable(
                         ContextCompat.getDrawable(
@@ -197,36 +222,45 @@ class SongPlayerFragment : Fragment() {
 
     private fun setBackground(songDetails: SongDetails) {
         lifecycleScope.launch {
-            val b = withContext(Dispatchers.IO) {
-                Glide.with(requireContext())
-                    .asBitmap()
-                    .transform(CenterCrop())
-                    .centerInside()
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .load("https://cms.samespace.com/assets/${songDetails.cover}")
-                    .submit()
-                    .get()
-            }
-            Palette.from(b).generate { palette ->
-                val swatch = palette?.darkMutedSwatch ?: palette?.darkVibrantSwatch
-                swatch?.let {
-                    val h: Int = binding.root.height ?: 0
-                    val mDrawable = ShapeDrawable(RectShape())
-                    mDrawable.paint.shader = LinearGradient(
-                        0f,
-                        0f,
-                        0f,
-                        h.toFloat(),
-                        it.rgb,
+            try {
+                val b = withContext(Dispatchers.IO) {//todo @Abhi add extension function for glide bitmap
+                    Glide.with(requireContext())
+                        .asBitmap()
+                        .transform(CenterCrop())
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .load(
+                            if (songDetails.uri != null) {
+                                songDetails.uri
+                            } else {
+                                "https://cms.samespace.com/assets/${songDetails.cover}"
+                            }
+                        )
+                        .submit()
+                        .get()
+                }
+                Palette.from(b).generate { palette ->
+                    val swatch = palette?.darkMutedSwatch ?: palette?.darkVibrantSwatch
+                    swatch?.let {
+                        val h: Int = binding.root.height ?: 0
+                        val mDrawable = ShapeDrawable(RectShape())
+                        mDrawable.paint.shader = LinearGradient(
+                            0f,
+                            0f,
+                            0f,
+                            h.toFloat(),
+                            it.rgb,
 //                        it.bodyTextColor,
-                        requireContext().resources.getColor(R.color.black, null),
-                        Shader.TileMode.REPEAT
-                    )
-                    binding.root.background = mDrawable
-                }
-                palette?.darkVibrantSwatch?.let {
+                            requireContext().resources.getColor(R.color.black, null),
+                            Shader.TileMode.REPEAT
+                        )
+                        binding.root.background = mDrawable
+                    }
+                    palette?.darkVibrantSwatch?.let {
 
+                    }
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }

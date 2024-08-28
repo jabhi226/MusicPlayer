@@ -20,7 +20,6 @@ import com.example.musicplayer.modules.songs.service.SongEventListener
 import com.example.musicplayer.modules.songs.service.SongPlayerService
 import com.example.musicplayer.modules.songs.ui.activity.MainActivity
 import com.example.musicplayer.modules.songs.ui.adapter.SongListAdapter
-import com.example.musicplayer.modules.songs.viewModels.ForYouViewModel
 import com.example.musicplayer.modules.songs.viewModels.SongsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 

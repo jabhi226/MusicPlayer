@@ -1,27 +1,25 @@
 package com.example.musicplayer.di
 
-import android.content.Context
-import com.example.musicplayer.modules.songs.data.convertor.ResponseConvertor
+import com.example.musicplayer.modules.songs.data.convertor.RemoteSongsResponseConverter
+import com.example.musicplayer.modules.songs.data.convertor.RemoteSongsResponseConverterImpl
 import com.example.musicplayer.modules.songs.data.repository.ForYouRepository
 import com.example.musicplayer.modules.songs.data.repository.ForYouRepositoryImpl
-import com.example.musicplayer.network.services.NetworkApiService
+import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ViewModelScoped
 
 @InstallIn(ViewModelComponent::class)
 @Module
-class RepositoryModule {
+abstract class RepositoryModule {
 
-    @Provides
+    @Binds
     @ViewModelScoped
-    fun provideForYouRepository(
-        networkApiService: NetworkApiService,
-        @ApplicationContext context: Context
-    ): ForYouRepository {
-        return ForYouRepositoryImpl(networkApiService, ResponseConvertor(context))
-    }
+    abstract fun bindRemoteSongResponseConverter(remoteSongsResponseConverter: RemoteSongsResponseConverterImpl): RemoteSongsResponseConverter
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindForYouRepository(forYouRepository: ForYouRepositoryImpl): ForYouRepository
+
 }

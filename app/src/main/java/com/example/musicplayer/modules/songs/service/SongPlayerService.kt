@@ -3,17 +3,20 @@ package com.example.musicplayer.modules.songs.service
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.support.v4.media.session.MediaSessionCompat
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CenterInside
 import com.example.musicplayer.R
 import com.example.musicplayer.application.MyApp
 import com.example.musicplayer.modules.songs.data.models.network.SongDetails
 import com.example.musicplayer.modules.songs.helper.SongType
 import com.example.musicplayer.modules.songs.receiver.SongPlayerNotificationReceiver
+import java.io.File
 
 
 class SongPlayerService : Service() {
@@ -22,6 +25,7 @@ class SongPlayerService : Service() {
     private val binder = SongPlayerBinder()
     private var currentSongDataPoint: String? = null
     private var songEventListener: SongEventListener? = null
+    private var mediaSession: MediaSessionCompat? = null
 
     companion object {
         const val PLAY = "PLAY"
@@ -55,7 +59,7 @@ class SongPlayerService : Service() {
         }
     }
 
-    fun setEventListeners(songEventListener: SongEventListener){
+    fun setEventListeners(songEventListener: SongEventListener) {
         this.songEventListener = songEventListener
     }
 
@@ -87,7 +91,7 @@ class SongPlayerService : Service() {
         song: SongDetails,
         isRemote: Boolean
     ) {
-        val mediaSession = MediaSessionCompat(this, "music_player")
+        mediaSession = MediaSessionCompat(this, "music_player")
 
         val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.FLAG_IMMUTABLE
@@ -109,38 +113,47 @@ class SongPlayerService : Service() {
         nextIntent.putExtra("isRemote", isRemote)
         val nextPendingIntent = PendingIntent.getBroadcast(baseContext, 0, nextIntent, flag)
 
-        val notification = androidx.core.app.NotificationCompat.Builder(
+        val notificationBuilder = androidx.core.app.NotificationCompat.Builder(
             this,
             MyApp.MUSIC_PLAYER_NOTIFICATION_CHANNEL
         )
             // Show controls on lock screen even when user hides sensitive content.
             .setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setLargeIcon(
-                BitmapFactory.decodeResource(
-                    this.resources,
-                    R.drawable.ic_launcher_foreground
-                )
-            )
             // Add media control buttons that invoke intents in your media service
             .addAction(android.R.drawable.ic_media_previous, "Previous", prevPendingIntent) // #0
             .addAction(android.R.drawable.ic_media_pause, "Pause", playPendingIntent) // #1
             .addAction(android.R.drawable.ic_media_next, "Next", nextPendingIntent) // #2
-//            .setContentIntent(contentIntent)
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
                     .setShowActionsInCompactView(0, 1, 2)
-                    .setMediaSession(mediaSession.sessionToken)
+                    .setMediaSession(mediaSession?.sessionToken)
             )
             .setContentTitle(song.name)
             .setContentText(song.artist)
             .setOnlyAlertOnce(true) // show notification only once
             .setOngoing(true) // set notification ongoing to make it non cancelable
             .setAutoCancel(false)
-            .build()
 
-        startForeground(1001, notification)
+        try {
+            var bitmap =
+                Glide.with(baseContext)
+                    .asBitmap()
+                    .centerInside()
+                    .transform(CenterInside())
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
 
+            bitmap = if (song.uri != null) {
+                bitmap.load(File(song.uri.toString()))
+            } else {
+                bitmap.load("https://cms.samespace.com/assets/${song.cover}")
+            }
+            notificationBuilder.setLargeIcon(bitmap.submit().get())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        startForeground(1001, notificationBuilder.build())
     }
 
     override fun onBind(intent: Intent?): IBinder {

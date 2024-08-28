@@ -20,7 +20,7 @@ import javax.inject.Inject
 class SongsViewModel @Inject constructor(
     private val repository: ForYouRepository,
     private val exceptionHandler: CoroutineExceptionHandler
-): ViewModel() {
+) : ViewModel() {
 
     private val _remoteSongList = MutableLiveData<Resource<List<SongDetails>>>()
     val remoteSongList: LiveData<Resource<List<SongDetails>>> get() = _remoteSongList
@@ -32,9 +32,10 @@ class SongsViewModel @Inject constructor(
     val currentSong: LiveData<Pair<SongType, Int>> get() = _currentSong
 
     init {
-        getSongList()
+//        getSongList()
     }
 
+    //todo @Abhi uncomment to get remote songs
     private fun getSongList() {
         viewModelScope.launch {
             CoroutineScope(Dispatchers.IO).launch(exceptionHandler) {
@@ -43,14 +44,22 @@ class SongsViewModel @Inject constructor(
         }
     }
 
-    fun setCurrentSong(it: Pair<SongType, Int?>) {
-        if (it.second != null)
-            _currentSong.value = Pair(it.first, it.second!!)
+    /**
+     * songType (it.first) required if changing songType else considered the same
+     */
+    fun setCurrentSong(it: Pair<SongType?, Int?>) {
+        val songType = it.first ?: _currentSong.value?.first
+        if (it.second != null || songType != null)
+            _currentSong.value = Pair(songType!!, it.second!!)
     }
 
-    fun changesSongNumber(i: Pair<SongType, Int>) {
+    /**
+     * songType (it.first) required if changing songType else considered the same
+     */
+    fun changesSongNumber(i: Pair<SongType?, Int>) {
+        val songType = i.first ?: _currentSong.value?.first
         val songNumber = currentSong.value?.second?.plus(i.second) ?: 0
-        if (i.first == SongType.REMOTE_SONG) {
+        if (songType == SongType.REMOTE_SONG) {
             if ((remoteSongList.value?.data?.count() ?: 0) > songNumber) {
                 _currentSong.value = Pair(SongType.REMOTE_SONG, songNumber)
             }

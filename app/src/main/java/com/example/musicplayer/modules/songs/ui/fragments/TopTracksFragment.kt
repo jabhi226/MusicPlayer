@@ -2,9 +2,11 @@ package com.example.musicplayer.modules.songs.ui.fragments
 
 import android.Manifest
 import android.content.ContentUris
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
@@ -19,7 +21,7 @@ import com.example.musicplayer.modules.songs.data.models.ui.LocalSong
 import com.example.musicplayer.modules.songs.helper.SongType
 import com.example.musicplayer.modules.songs.ui.adapter.TopTrackAdapter
 import com.example.musicplayer.modules.songs.viewModels.SongsViewModel
-import com.example.musicplayer.modules.songs.viewModels.TopTrackViewModel
+import java.io.File
 
 
 class TopTracksFragment : Fragment() {
@@ -30,7 +32,7 @@ class TopTracksFragment : Fragment() {
         it?.let {
             songViewModel.setCurrentSong(
                 Pair(
-                    SongType.REMOTE_SONG,
+                    SongType.LOCAL_SONG,
                     songViewModel.localSongList.value?.indexOf(it)
                 )
             )
@@ -75,77 +77,109 @@ class TopTracksFragment : Fragment() {
     private fun getPlayList(): List<LocalSong>? {
         return try {
             val songs = ArrayList<LocalSong>()
-            val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-            val projection = arrayOf(
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.DATA,
-                MediaStore.Audio.Media.TITLE,
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.ALBUM,
-                MediaStore.Audio.Media.DURATION,
-                MediaStore.Audio.Media.ALBUM_ID,
-                MediaStore.Audio.AudioColumns.ALBUM_ID,
-                MediaStore.Audio.AudioColumns.DATA,
-                MediaStore.Audio.AudioColumns.DISPLAY_NAME,
-                MediaStore.Audio.AudioColumns.ALBUM,
-                MediaStore.Audio.ArtistColumns.ARTIST,
-                MediaStore.Audio.AudioColumns.RELATIVE_PATH,
-                MediaStore.Audio.AudioColumns.AUTHOR,
-                MediaStore.Audio.AudioColumns.DURATION,
-            )
-            val selection = MediaStore.Audio.Media.IS_MUSIC
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                val projection = arrayOf(
+                    MediaStore.Audio.Media._ID,
+                    MediaStore.Audio.Media.DATA,
+                    MediaStore.Audio.Media.TITLE,
+                    MediaStore.Audio.Media.ARTIST,
+                    MediaStore.Audio.Media.ALBUM,
+                    MediaStore.Audio.Media.DURATION,
+                    MediaStore.Audio.Media.ALBUM_ID,
+                    MediaStore.Audio.AudioColumns.ALBUM_ID,
+                    MediaStore.Audio.AudioColumns.DATA,
+                    MediaStore.Audio.AudioColumns.DISPLAY_NAME,
+                    MediaStore.Audio.AudioColumns.ALBUM,
+                    MediaStore.Audio.ArtistColumns.ARTIST,
+                    MediaStore.Audio.AudioColumns.RELATIVE_PATH,
+                    MediaStore.Audio.AudioColumns.AUTHOR,
+                    MediaStore.Audio.AudioColumns.DURATION,
+                )
+                val selection = MediaStore.Audio.Media.IS_MUSIC
 
-            val c = requireContext().contentResolver.query(
-                uri,
-                projection,
-                null,
-                null,
-                null
-            )
+                val c = requireContext().contentResolver.query(
+                    uri,
+                    projection,
+                    null,
+                    null,
+                    null
+                )
 
-            if (c != null) {
-                while (c.moveToNext()) {
-                    for (i in 0 until c.columnCount) {
-                        print("${c.getString(i)}, ")
-                    }
-                    val id = c.getString(0)
-                    val data = c.getString(1)
-                    val displayName = c.getString(2)
-                    val artist = c.getString(3)
-                    val album = c.getString(4)
-                    val duration = c.getString(5)
-                    val albumId = c.getLong(6)
+                if (c != null) {
+                    while (c.moveToNext()) {
+                        for (i in 0 until c.columnCount) {
+                            print("${c.getString(i)}, ")
+                        }
+                        val id = c.getString(0)
+                        val data = c.getString(1)
+                        val displayName = c.getString(2)
+                        val artist = c.getString(3)
+                        val album = c.getString(4)
+                        val duration = c.getString(5)
+                        val albumId = c.getLong(6)
 
 
-                    val imageUri = ContentUris.withAppendedId(
-                        Uri.parse("content://media/external/audio/albumart"),
-                        albumId
-                    )
-                    val songUri = ContentUris.withAppendedId(uri, id.toLong())
-                    println("=========>>> $songUri")
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val imageUri = ContentUris.withAppendedId(
+                            Uri.parse("content://media/external/audio/albumart"),
+                            albumId
+                        )
+                        val songUri = ContentUris.withAppendedId(uri, id.toLong())
+                        println("=========>>> $songUri")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 //                        val adsflsf = requireContext().contentResolver.loadThumbnail(imageUri, Size(300, 300), null)
 //                        adsflsf
-                    }
+                        }
 
-                    val song = LocalSong(
-                        id,
-                        data,
-                        displayName,
-                        artist,
-                        album,
-                        duration,
-                        imageUri.toString(),
-                        songUri
-                    )
-                    songs.add(song)
+                        val song = LocalSong(
+                            id,
+                            data,
+                            displayName,
+                            artist,
+                            album,
+                            duration,
+                            imageUri.toString(),
+                            songUri
+                        )
+                        songs.add(song)
+                    }
+                    c.close()
                 }
-                c.close()
+            }
+            else {
+                val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+                val musicFiles = musicDir.listFiles { file -> file.isFile && file.name.endsWith(".mp3") }
+                musicFiles?.forEach { file ->
+                    // Process each file, e.g., display its path
+                    extractMetadata(file)
+                    println("Music File: ${file.absolutePath}")
+                }
             }
             songs
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    private fun extractMetadata(file: File) {
+        // Use MediaMetadataRetriever to extract metadata
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(file.absolutePath)
+
+            val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+            val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+            val album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
+            val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+
+            // Use the extracted metadata as needed
+//            Toast.makeText(this, "Title: $title, Artist: $artist, Album: $album, Duration: $duration ms", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+//            Toast.makeText(this, "Error retrieving metadata", Toast.LENGTH_SHORT).show()
+        } finally {
+            retriever.release()
         }
     }
 

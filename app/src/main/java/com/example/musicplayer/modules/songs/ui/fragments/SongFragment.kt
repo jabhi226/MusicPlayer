@@ -140,26 +140,35 @@ class SongFragment : Fragment(), ServiceConnection, SongEventListener {
             itemMinimizedPlayer.apply item@{
                 tvSongName.text = songDetails.name
                 lifecycleScope.launch {
-
-                    val bitmap = lifecycleScope.async(Dispatchers.IO) {
-                        Glide.with(ivSongImg.context)
-                            .asBitmap()
-                            .centerInside()
-                            .transform(CenterInside())
-                            .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .load("https://cms.samespace.com/assets/${songDetails.cover}")
-                            .submit()
-                            .get()
-                    }
-                    bitmap.await()?.let { bitmap1 ->
-                        ivSongImg.setImageBitmap(bitmap1)
-                        Palette.from(bitmap1).generate { palette ->
-                            val swatch = palette?.darkMutedSwatch ?: palette?.darkVibrantSwatch
-                            swatch?.let {
-                                tvSongName.setTextColor(it.titleTextColor)
-                                this@item.root.setBackgroundColor(it.rgb)
+                    try {
+                        val bitmap = lifecycleScope.async(Dispatchers.IO) {
+                            Glide.with(ivSongImg.context)
+                                .asBitmap()
+                                .centerInside()
+                                .transform(CenterInside())
+                                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                .load(
+                                    if (songDetails.uri != null) {
+                                        songDetails.uri
+                                    } else {
+                                        "https://cms.samespace.com/assets/${songDetails.cover}"
+                                    }
+                                )
+                                .submit()
+                                .get()
+                        }
+                        bitmap.await()?.let { bitmap1 ->
+                            ivSongImg.setImageBitmap(bitmap1)
+                            Palette.from(bitmap1).generate { palette ->
+                                val swatch = palette?.darkMutedSwatch ?: palette?.darkVibrantSwatch
+                                swatch?.let {
+                                    tvSongName.setTextColor(it.titleTextColor)
+                                    this@item.root.setBackgroundColor(it.rgb)
+                                }
                             }
                         }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
                 }
 
